@@ -1,14 +1,19 @@
+const { userRouter } = require('../src/routes/UserRouter');
+const { paymentRouter } = require('../src/routes/paymentRouter');
 const express = require("express");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cors = require("cors");
-
 dotenv.config();
 const app = express();
 
 // Middlewares
 app.use(express.json());
 app.use(cors());
+
+//routes
+app.use('/api/user', userRouter);
+app.use("/api/payments", paymentRouter);
 
 // DB Connection
 mongoose
