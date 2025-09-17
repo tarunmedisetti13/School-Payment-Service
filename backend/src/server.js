@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const authMiddleware = require('./middleware/authMiddleware');
-const { paymentRouter } = require('./routes/PaymentRouter')
+const { paymentRouter } = require('./routes/paymentRouter')
 dotenv.config();
 const app = express();
 
