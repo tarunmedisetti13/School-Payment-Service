@@ -14,7 +14,13 @@ const PG_SECRET_KEY = process.env.PG_SECRET_KEY;
 exports.createPayment = async (req, res) => {
     try {
         const { school_id, amount, callback_url, student_info, trustee_id, gateway_name } = req.body;
-
+        // At the beginning
+        if (!school_id || !amount || !student_info) {
+            return res.status(400).json({
+                success: false,
+                message: "Missing required fields"
+            });
+        }
         // 1. Generate sign (JWT)
         const payload = { school_id, amount, callback_url };
         //console.log(PG_SECRET_KEY);
@@ -31,7 +37,6 @@ exports.createPayment = async (req, res) => {
                 },
             }
         );
-        //console.log('response:', response);
 
         // 3. Save in DB
         const order = await Order.create({
@@ -49,9 +54,9 @@ exports.createPayment = async (req, res) => {
             payment_details: "",
             bank_reference: "",
             payment_message: "Payment link generated",
-            status: "PENDING",             // must match enum: lowercase
+            status: "PENDING",
             error_message: "NA",
-            payment_time: null,            // or leave as default Date.now if you want
+            payment_time: Date.now(),
         });
 
         res.json({
@@ -72,7 +77,7 @@ exports.createPayment = async (req, res) => {
 // Check Payment Status
 exports.checkPaymentStatus = async (req, res) => {
     try {
-        const { orderId } = req.query; // get orderId from query
+        const { orderId } = req.params; // get orderId from query
 
         if (!orderId) {
             return res.status(400).json({
@@ -107,8 +112,6 @@ exports.checkPaymentStatus = async (req, res) => {
     }
 };
 
-
-// Webhook endpoint
 exports.webhookUpdate = async (req, res) => {
     try {
         // 1. Store raw webhook in WebhookLog
@@ -164,8 +167,6 @@ exports.webhookUpdate = async (req, res) => {
     }
 };
 
-
-// controllers/transactionController.js
 exports.getAllTransactions = async (req, res) => {
     try {
         const {
@@ -173,40 +174,44 @@ exports.getAllTransactions = async (req, res) => {
             limit = 10,
             status,
             schoolId,
-            startDate,
-            endDate,
+            date,
             sortBy = "createdAt",
             order = "desc",
         } = req.query;
 
         const match = {};
 
-        // Apply filters
         if (status) {
-            match.status = { $in: status.split(",") }; // allow multi-select
+            match.status = { $in: status.split(",").map(s => s.toUpperCase()) };
         }
+
         if (schoolId) {
-            match["order_info.school_id"] = { $in: schoolId.split(",") };
-        }
-        if (startDate && endDate) {
-            match.createdAt = {
-                $gte: new Date(startDate),
-                $lte: new Date(endDate),
+            match["order_info.school_id"] = {
+                $in: schoolId.split(",").map(id => new mongoose.Types.ObjectId(id))
             };
         }
 
+        if (date) {
+            const start = new Date(date);
+            start.setHours(0, 0, 0, 0); // start of day
+            const end = new Date(date);
+            end.setHours(23, 59, 59, 999); // end of day
+
+            match.payment_time = { $gte: start, $lte: end };
+        }
         const sortOrder = order === "asc" ? 1 : -1;
 
         const pipeline = [
             {
                 $lookup: {
-                    from: "orders", // collection name of Order
+                    from: "orders",
                     localField: "collect_id",
                     foreignField: "_id",
                     as: "order_info",
                 },
             },
             { $unwind: "$order_info" },
+            { $match: match },
             {
                 $project: {
                     collect_id: "$_id",
@@ -219,12 +224,7 @@ exports.getAllTransactions = async (req, res) => {
                     custom_order_id: "$order_info.student_info.id",
                 },
             },
-            { $match: match },
-            {
-                $sort: {
-                    [sortBy]: sortOrder,
-                },
-            },
+            { $sort: { [sortBy]: sortOrder } },
             {
                 $facet: {
                     metadata: [{ $count: "total" }],
@@ -250,9 +250,7 @@ exports.getAllTransactions = async (req, res) => {
         });
     } catch (err) {
         console.error("Error fetching transactions:", err);
-        res
-            .status(500)
-            .json({ success: false, message: "Failed to fetch transactions" });
+        res.status(500).json({ success: false, message: "Failed to fetch transactions" });
     }
 };
 
@@ -260,23 +258,33 @@ exports.getAllTransactions = async (req, res) => {
 exports.getTransactionsBySchool = async (req, res) => {
     try {
         const { schoolId } = req.params;
-        const { status, payment_mode, startDate, endDate, page = 1, limit = 10 } = req.query;
+        const { page = 1, limit = 10, sortBy = "payment_time", order = "desc" } = req.query;
+
+        // Validate schoolId
+        if (!mongoose.Types.ObjectId.isValid(schoolId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid schoolId. Must be a valid MongoDB ObjectId."
+            });
+        }
 
         const matchConditions = {
             "order_info.school_id": new mongoose.Types.ObjectId(schoolId)
         };
 
-        if (status) matchConditions["status"] = status.toUpperCase();
-        if (payment_mode) matchConditions["payment_mode"] = payment_mode.toLowerCase();
-        if (startDate && endDate) {
-            matchConditions["payment_time"] = {
-                $gte: new Date(startDate),
-                $lte: new Date(endDate)
-            };
-        }
-
         const skip = (parseInt(page) - 1) * parseInt(limit);
 
+        // Allowed sorting fields
+        const sortFields = {
+            createdAt: "payment_time",
+            order_amount: "order_amount",
+            transaction_amount: "transaction_amount",
+            status: "status"
+        };
+        const sortField = sortFields[sortBy] || "payment_time";
+        const sortOrder = order === "asc" ? 1 : -1;
+
+        // Fetch transactions
         const transactions = await OrderStatus.aggregate([
             {
                 $lookup: {
@@ -301,11 +309,12 @@ exports.getTransactionsBySchool = async (req, res) => {
                     custom_order_id: "$order_info.student_info.id"
                 }
             },
-            { $sort: { payment_time: -1 } },
+            { $sort: { [sortField]: sortOrder } },
             { $skip: skip },
             { $limit: parseInt(limit) }
         ]);
 
+        // Total count
         const totalCount = await OrderStatus.aggregate([
             {
                 $lookup: {
@@ -327,18 +336,16 @@ exports.getTransactionsBySchool = async (req, res) => {
             limit: parseInt(limit),
             data: transactions
         });
+
     } catch (err) {
         console.error(err);
         res.status(500).json({ success: false, message: "Failed to fetch transactions by school" });
     }
 };
 
-
-
 exports.getTransactionStatus = async (req, res) => {
     try {
         const { custom_order_id } = req.params;
-
         const transaction = await OrderStatus.aggregate([
             {
                 $lookup: {
@@ -401,7 +408,6 @@ exports.getWebhookLogs = async (req, res) => {
     }
 };
 
-// controllers/PaymentController.js
 exports.getTransactionSummaryBySchool = async (req, res) => {
     try {
         const { schoolId } = req.params;

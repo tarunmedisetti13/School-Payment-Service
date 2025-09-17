@@ -1,9 +1,10 @@
-const { userRouter } = require('../src/routes/UserRouter');
-const { paymentRouter } = require('../src/routes/paymentRouter');
+const { userRouter } = require('./routes/UserRouter');
 const express = require("express");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cors = require("cors");
+const authMiddleware = require('./middleware/authMiddleware');
+const { paymentRouter } = require('./routes/PaymentRouter');
 dotenv.config();
 const app = express();
 
@@ -12,8 +13,9 @@ app.use(express.json());
 app.use(cors());
 
 //routes
+
 app.use('/api/user', userRouter);
-app.use("/api/payments", paymentRouter);
+app.use("/api/payments", authMiddleware, paymentRouter);
 
 // DB Connection
 mongoose

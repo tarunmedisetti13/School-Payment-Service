@@ -5,9 +5,9 @@ const jwt = require('jsonwebtoken');
 // ✅ Create User
 const CreateUser = async (req, res) => {
     try {
-        const { username, email, password, role } = req.body;
+        const { username, email, password } = req.body;
 
-        if (!username || !email || !password || !role) {
+        if (!username || !email || !password) {
             return res.status(400).json({
                 error: "Bad Request",
                 message: "All fields are required",
@@ -26,7 +26,7 @@ const CreateUser = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // create new user
-        const user = new User({ username, email, password: hashedPassword, role });
+        const user = new User({ username, email, password: hashedPassword });
         const newUser = await user.save();
 
         // exclude password
@@ -34,7 +34,7 @@ const CreateUser = async (req, res) => {
 
         // generate token
         const token = jwt.sign(
-            { id: newUser._id, email: newUser.email, role: newUser.role },
+            { id: newUser._id, email: newUser.email },
             process.env.JWT_SECRET,
             { expiresIn: "1d" }
         );
@@ -78,7 +78,7 @@ const LoginUser = async (req, res) => {
         if (!isMatch) {
             return res.status(401).json({
                 error: "Unauthorized",
-                message: "Invalid credentials",
+                message: "Invalid Password",
             });
         }
 
@@ -87,7 +87,7 @@ const LoginUser = async (req, res) => {
 
         // generate token
         const token = jwt.sign(
-            { id: user._id, email: user.email, role: user.role },
+            { id: user._id, email: user.email },
             process.env.JWT_SECRET,
             { expiresIn: "1d" }
         );

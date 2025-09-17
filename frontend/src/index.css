@@ -1,1 +1,20 @@
 @import 'tailwindcss';
+
+html,
+body,
+#root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: #f9fafb;
+    /* light mode */
+    transition: background-color 0.3s;
+}
+
+.dark html,
+.dark body,
+.dark #root {
+    background-color: #1f2937;
+    height: 100%;
+    /* dark mode */
+}
