@@ -11,7 +11,7 @@ export const AuthProvider = ({ children }) => {
 
     // Create axios instance with base configuration
     const api = axios.create({
-        baseURL: "http://localhost:5000/api",
+        baseURL: import.meta.env.VITE_BACKEND_URI,
         timeout: 10000, // 10 second timeout
     });
 

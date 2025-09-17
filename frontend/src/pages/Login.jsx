@@ -3,13 +3,13 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
-
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 const Login = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
-
+    const [showPassword, setShowPassword] = useState(false);
     const { saveToken, api } = useAuth();
     const navigate = useNavigate();
 
@@ -37,8 +37,8 @@ const Login = () => {
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-gray-10">
-            <div className=" p-8 rounded-xl shadow-lg w-full max-w-md">
-                <h2 className="text-2xl font-bold text-center mb-6 text-gray-900 ">
+            <div className=" p-8 rounded-xl shadow-lg w-full max-w-md shadow-gray-800">
+                <h2 className="text-2xl font-bold text-center mb-6  ">
                     Login
                 </h2>
 
@@ -54,15 +54,21 @@ const Login = () => {
                         />
                     </div>
 
-                    <div>
-                        <label className="block ">Password</label>
+                    <div className="relative">
+                        <label className="block mb-1">Password</label>
                         <input
-                            type="password"
-                            className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            type={showPassword ? "text" : "password"}
+                            className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
                         />
+                        <span
+                            className="absolute right-2 top-1/2 transform -translate-y-1/2 cursor-pointer mt-3 text-gray-500"
+                            onClick={() => setShowPassword(!showPassword)}
+                        >
+                            {showPassword ? <FaEyeSlash /> : <FaEye />}
+                        </span>
                     </div>
 
                     {error && <p className="text-red-500 text-sm">{error}</p>}
