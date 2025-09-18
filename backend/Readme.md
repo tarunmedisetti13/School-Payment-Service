@@ -76,14 +76,13 @@ JWT_EXPIRE=1d
 PG_SECRET_KEY=your_payment_gateway_secret_key
 PG_API_KEY=your_payment_gateway_api_key
 PG_BASE_URL=https://api.paymentgateway.com
+CORS_ORIGIN=your-fronend-url
 
-# Optional: Webhook URL for payment gateway
-WEBHOOK_URL=http://localhost:5000/api/payments/webhook-update
 ```
 
 ## API Documentation
 
-Base URL: `http://localhost:5000/api`
+Base URL: `http://localhost:5000`
 
 ### User Authentication
 
