@@ -41,7 +41,7 @@ POST /api/user/create-user
 }
 ```
 
-![Login Screen](./login.png)
+![Login Screen](./public/login.png)
 
 ---
 
@@ -61,7 +61,7 @@ POST /api/user/create-user
 - Color-coded status badges
 - URL synchronization for shareable filters
 
-![Transactions Dashboard](./transactions.png)
+![Transactions Dashboard](./public/transactions.png)
 
 ---
 
@@ -79,7 +79,7 @@ POST /api/user/create-user
 2. Press Enter or click Search
 3. View school-specific results
 
-![School Transactions](./transactions-by-school.png)
+![School Transactions](./public/transactions-by-school.png)
 
 ---
 
@@ -100,7 +100,7 @@ POST /api/user/create-user
 2. Click "Check Status"
 3. View instant results
 
-![Transaction Status Checker](./transactions-check.png)
+![Transaction Status Checker](./public/transactions-check.png)
 
 ## Tech Stack
 
