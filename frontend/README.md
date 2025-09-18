@@ -41,8 +41,6 @@ POST /api/user/create-user
 }
 ```
 
-![Login Screen](./public/login.png)
-
 ---
 
 ### 📊 Transactions Dashboard
