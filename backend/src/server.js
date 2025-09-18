@@ -27,7 +27,7 @@ app.use(express.json());
 
 //enable cors to handle incoming requests
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+// app.options("*", cors(corsOptions));
 
 //routes
 
