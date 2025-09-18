@@ -79,7 +79,7 @@ POST /api/user/create-user
 2. Press Enter or click Search
 3. View school-specific results
 
-![School Transactions](./public/transactions-by-school.png)
+![School Transactions](./public/transaction-by-school.png)
 
 ---
 
